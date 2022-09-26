@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: user-state
+spec:
+  selector:
+    matchLabels:
+      app: back-end-user
+  serviceName: "user-service"
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: back-end-user
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: user
+        image: public.ecr.aws/y3z0f7y7/display
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+        - name: claim-backend-user
+          mountPath: /app/*
+        env:
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mongocred
+                key: username
+          - name: DB_PW
+            valueFrom:
+              secretKeyRef:
+                name: mongocred
+                key: password
+  volumeClaimTemplates:
+  - metadata:
+      name: claim-backend-user
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "fas2"
+      resources:
+        requests:
+          storage: 500Mi
+      selector:
+        matchLabels:
+          type: local
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: back-end-user
+  ports:
+  - port: 8081
+    targetPort: 8081

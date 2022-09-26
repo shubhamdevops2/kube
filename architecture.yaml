@@ -1,0 +1,43 @@
+project:
+  - display:
+    container: 
+      image: display
+      name: display
+      service:
+        port: 8080
+        name: display-service
+      label:
+        - app: front-end
+      replicas: 2
+  - game:
+    container:
+      image: game
+      name: game
+      service:
+        port: 8082
+        name: game-service
+      label:
+        - app: back-end-game
+      replicas: 2
+      claim: claim-backend-user
+  - user-authentication: 
+    container:
+      image: user
+      name: user
+      service:
+        port: 8081
+        name: user-service
+      label:
+        - app: back-end-user
+      replicas: 2
+      claim: claim-backend-user
+  - mongodb:
+    container: 
+      image: mongodb
+      name: mongodb
+      service:
+        port: 27017
+        name: mongodb-service
+      label:
+        - app: back-end-mongo
+
