@@ -19,7 +19,7 @@ project:
       label:
         - app: back-end-game
       replicas: 2
-      claim: claim-backend-user
+      claim: claim-backend-game
   - user-authentication: 
     container:
       image: user
