@@ -16,7 +16,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: user
-        image: public.ecr.aws/y3z0f7y7/display
+        image: public.ecr.aws/y3z0f7y7/user-authentication
         ports:
         - containerPort: 8081
         volumeMounts:

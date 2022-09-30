@@ -10,34 +10,43 @@ project:
         - app: front-end
       replicas: 2
   - game:
-    container:
-      image: game
-      name: game
-      service:
-        port: 8082
-        name: game-service
+      service: game-service
       label:
         - app: back-end-game
       replicas: 2
-      claim: claim-backend-game
-  - user-authentication: 
     container:
-      image: user
-      name: user
-      service:
-        port: 8081
-        name: user-service
+      -  image: game
+         name: game
+         service:
+          port: 8082
+         claim: claim-backend-game
+      -  image: mongod1
+         name: mongo1
+         service:
+           port: 27017
+         claim: claim-database-1
+      -  image: mongod2
+         name: mongo2
+         service:
+           port: 27017
+         claim: claim-database-1 
+  - user-authentication: 
+      service: user-service
       label:
         - app: back-end-user
       replicas: 2
-      claim: claim-backend-user
-  - mongodb:
-    container: 
-      image: mongodb
-      name: mongodb
-      service:
-        port: 27017
-        name: mongodb-service
-      label:
-        - app: back-end-mongo
+    container:
+      -  image: user
+         name: user
+         service:
+          port: 8081
+         claim: claim-backend-user
+      -  image: mongod1
+         name: mongo1
+         service:
+           port: 27017
+         claim: claim-database-2
+      -  image: mongod2
+         name: mongo2
+
 
