@@ -1,51 +1,3 @@
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: user-state
-spec:
-  selector:
-    matchLabels:
-      app: back-end-user
-  serviceName: "user-service"
-  replicas: 2
-  template:
-    metadata:
-      labels:
-        app: back-end-user
-    spec:
-      restartPolicy: Always
-      containers:
-      - name: user
-        image: public.ecr.aws/y3z0f7y7/user-authentication
-        ports:
-        - containerPort: 8081
-        volumeMounts:
-        - name: claim-backend-user
-          mountPath: /app/*
-        env:
-          - name: DB_USER
-            valueFrom:
-              secretKeyRef:
-                name: mongocred
-                key: username
-          - name: DB_PW
-            valueFrom:
-              secretKeyRef:
-                name: mongocred
-                key: password
-  volumeClaimTemplates:
-  - metadata:
-      name: claim-backend-user
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "fas2"
-      resources:
-        requests:
-          storage: 500Mi
-      selector:
-        matchLabels:
-          type: local
-
 ---
 
 apiVersion: v1
@@ -56,5 +8,167 @@ spec:
   selector:
     app: back-end-user
   ports:
-  - port: 8081
+  - name: user
+    port: 8081
     targetPort: 8081
+  - name: mongo
+    port: 27017
+    targetPort: 27017
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: user-state
+spec:
+  serviceName: "user-service"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: back-end-user
+  template:
+    metadata:
+      labels:
+        app: back-end-user
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mongo
+          image: mongo
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-persistent-storage
+              mountPath: /data/*
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: root
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: root
+        - name: user
+          image: public.ecr.aws/y3z0f7y7/user-authentication
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: claim-backend-user
+              mountPath: /app/*
+          env:
+            - name: DB_USER
+              value: root
+            - name: DB_PW
+              value: root
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-persistent-storage
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "fast3"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+          cpu: 100m
+          memory: 150Mi
+        limits:
+          storage: 2Gi
+          cpu: 200m
+          memory: 250Mi
+      selector:
+        matchLabels:
+          type: fast3-user
+
+  - metadata:
+      name: claim-backend-user
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "fast2"
+      resources:
+        requests:
+          storage: 500Mi
+      
+
+---
+
+kind: StorageClass
+apiVersion:  storage.k8s.io/v1
+metadata:
+  name: fast3
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: database1
+  labels:
+    type: fast3-user
+spec:
+  storageClassName: fast3
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/database1"
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: database2
+  labels:
+    type: fast3-user
+spec:
+  storageClassName: fast3
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/database2"
+
+---
+
+
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast2
+provisioner: kubernetes.io/gce-pd
+parameters:
+ type: pd-ssd
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: backend-3
+spec:
+  storageClassName: fast2
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/backend3"
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: backend-4
+spec:
+  storageClassName: fast2
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/backend4"

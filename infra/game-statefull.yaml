@@ -1,51 +1,3 @@
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: game-state
-spec:
-  selector:
-    matchLabels:
-      app: back-end-game
-  serviceName: "game-service"
-  replicas: 2
-  template:
-    metadata:
-      labels:
-        app: back-end-game
-    spec:
-      restartPolicy: Always
-      containers:
-      - name: game
-        image: public.ecr.aws/y3z0f7y7/game
-        ports:
-        - containerPort: 8082
-        volumeMounts:
-        - name: claim-backend-game
-          mountPath: /app/*
-        env:
-          - name: DB_USER
-            valueFrom:
-              secretKeyRef:
-                name: mongocred
-                key: username
-          - name: DB_PW
-            valueFrom:
-              secretKeyRef:
-                name: mongocred
-                key: password
-  volumeClaimTemplates:
-  - metadata:
-      name: claim-backend-game
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "fas1"
-      resources:
-        requests:
-          storage: 500Mi
-      selector:
-        matchLabels:
-          type: local
-
 ---
 
 apiVersion: v1
@@ -56,5 +8,162 @@ spec:
   selector:
     app: back-end-game
   ports:
-  - port: 8082
+  - name: game
+    port: 8082
     targetPort: 8082
+  - name: mongo
+    port: 27017
+    targetPort: 27017
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: game-state
+spec:
+  serviceName: "game-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: back-end-game
+  template:
+    metadata:
+      labels:
+        app: back-end-game
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mongo
+          image: mongo
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-game-storage
+              mountPath: /data/*
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: root
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: root
+        - name: game
+          image: public.ecr.aws/y3z0f7y7/game
+          ports:
+            - containerPort: 8082
+          volumeMounts:
+            - name: claim-backend-game
+              mountPath: /app/*
+          env:
+            - name: DB_USER
+              value: root
+            - name: DB_PW
+              value: root
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-game-storage
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "fast4"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+          cpu: 100m
+          memory: 150Mi
+        limits:
+          storage: 2Gi
+          cpu: 200m
+          memory: 250Mi
+
+
+  - metadata:
+      name: claim-backend-game
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "fast1"
+      resources:
+        requests:
+          storage: 500Mi
+
+
+
+---
+
+kind: StorageClass
+apiVersion:  storage.k8s.io/v1
+metadata:
+  name: fast4
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: database3
+spec:
+  storageClassName: fast4
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/database3"
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: database4
+spec:
+  storageClassName: fast4
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/database4"
+
+
+
+---
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast1
+provisioner: kubernetes.io/gce-pd
+parameters:
+ type: pd-ssd
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: backend-1
+spec:
+  storageClassName: fast1
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/backend1"
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: backend-2
+spec:
+  storageClassName: fast1
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/backend2"
