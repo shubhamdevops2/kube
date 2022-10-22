@@ -1,50 +1,89 @@
+
+kind: StorageClass
+apiVersion:  storage.k8s.io/v1
+metadata:
+  name: medium
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: frontend
+spec:
+  storageClassName: medium
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/tmp/micro/frontend"
+
+
+---
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frontendpvc
+spec:
+  resources:
+    requests:
+      storage: 500Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  storageClassName: medium
+
+---
+
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: display-state
 spec:
   selector:
     matchLabels:
       app: frontend
-  serviceName: "display-service"
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
         app: frontend
     spec:
+      tolerations:
+      - key: "app"
+        operator: "Equal"
+        value: "blue"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - worker1
       restartPolicy: Always
+      volumes:
+      - name: claim-frontend
+        persistentVolumeClaim:
+          claimName: frontendpvc
       containers:
       - name: display
         image: public.ecr.aws/y3z0f7y7/display
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         volumeMounts:
         - name: claim-frontend
           mountPath: /app/*
-        env:
-          - name: DB_USER
-            valueFrom:
-              secretKeyRef:
-                name: mongocred
-                key: username
-          - name: DB_PW
-            valueFrom:
-              secretKeyRef:
-                name: mongocred
-                key: password
-  volumeClaimTemplates:
-  - metadata:
-      name: claim-frontend
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "medium"
-      resources:
-        requests:
-          storage: 500Mi
-      selector:
-        matchLabels:
-          type: local
+
 
 ---
 
@@ -58,3 +97,15 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret
+type: opaque
+stringData:
+  username: root
+  password: root
+
