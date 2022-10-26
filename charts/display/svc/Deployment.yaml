@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Chart.Name }}-kd"
+  namespace: "{{ .Values.NAMESPACE }}"
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  replicas: {{ .Values.K8S_REPLICAS }}
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.K8S_MAX_UNAVAIL }}
+      maxSurge: {{ .Values.K8S_MAX_SURGE }}
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      tolerations:
+      - key: "app"
+        operator: "Equal"
+        value: "blue"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - worker1
+      restartPolicy: Always
+      volumes:
+      - name: claim-frontend
+        persistentVolumeClaim:
+          claimName: frontendpvc
+      containers:
+      - name: "{{ .Chart.Name }}-kc"
+        image: "{{ .Values.DOCKER_APP_IMAGE }}"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: claim-frontend
+          mountPath: "/app/*"
+        resources:
+          requests: 
+            memory: {{ .Values.K8S_REQ_MEM }}
+            cpu: {{ .Values.K8S_REQ_CPU }}
+          limits:
+            memory: {{ .Values.K8S_LIMIT_MEM }}
+            cpu: {{ .Values.K8S_LIMIT_CPU }}
+

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: display-svc
+description: A chart for display-svc
+version: 0.1.0

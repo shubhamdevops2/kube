@@ -1,0 +1,61 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: database1
+  labels:
+    type: fast3-user
+spec:
+  storageClassName: fast3
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/database1"
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: database2
+  labels:
+    type: fast3-user
+spec:
+  storageClassName: fast3
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/database2"
+
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: backend-3
+spec:
+  storageClassName: fast2
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/backend3"
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: backend-4
+spec:
+  storageClassName: fast2
+  capacity:
+    storage: 500Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/micro/backend4"

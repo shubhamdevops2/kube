@@ -1,0 +1,17 @@
+kind: StorageClass
+apiVersion:  storage.k8s.io/v1
+metadata:
+  name: fast3
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+
+---
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast2
+provisioner: kubernetes.io/gce-pd
+parameters:
+ type: pd-ssd

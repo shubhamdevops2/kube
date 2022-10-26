@@ -1,0 +1,4 @@
+apiVersion: v2
+name: game-svc
+description: A chart for game-svc
+version: 0.1.0

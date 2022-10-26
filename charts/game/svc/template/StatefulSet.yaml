@@ -1,107 +1,17 @@
-
-kind: StorageClass
-apiVersion:  storage.k8s.io/v1
-metadata:
-  name: fast3
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-ssd
-
----
-
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: database1
-  labels:
-    type: fast3-user
-spec:
-  storageClassName: fast3
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/tmp/micro/database1"
-
----
-
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: database2
-  labels:
-    type: fast3-user
-spec:
-  storageClassName: fast3
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/tmp/micro/database2"
-
----
-
-
-
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: fast2
-provisioner: kubernetes.io/gce-pd
-parameters:
- type: pd-ssd
-
----
-
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: backend-3
-spec:
-  storageClassName: fast2
-  capacity:
-    storage: 500Mi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/tmp/micro/backend3"
-
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: backend-4
-spec:
-  storageClassName: fast2
-  capacity:
-    storage: 500Mi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/tmp/micro/backend4"
-
-
----
-
-  
-
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: user-state
+  name: "{{ .Chart.Name }}-kd"
 spec:
-  serviceName: "user-service"
+  serviceName: "game-service"
   replicas: 2
   selector:
     matchLabels:
-      app: back-end-user
+      app: back-end-game
   template:
     metadata:
       labels:
-        app: back-end-user
+        app: back-end-game
     spec:
       tolerations:
       - key: "app"
@@ -124,7 +34,7 @@ spec:
           ports:
             - containerPort: 27017
           volumeMounts:
-            - name: mongo-persistent-storage
+            - name: mongo-game-storage
               mountPath: /data/*
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
@@ -132,17 +42,19 @@ spec:
                 secretKeyRef:
                   name: mysecret
                   key: username
+
             - name: MONGO_INITDB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mysecret
                   key: password
-        - name: user
-          image: public.ecr.aws/y3z0f7y7/user-authentication
+
+        - name: game
+          image: public.ecr.aws/y3z0f7y7/game
           ports:
-            - containerPort: 8081
+            - containerPort: 8082
           volumeMounts:
-            - name: claim-backend-user
+            - name: claim-backend-game
               mountPath: /app/*
           env:
             - name: DB_USER
@@ -158,9 +70,9 @@ spec:
 
   volumeClaimTemplates:
   - metadata:
-      name: mongo-persistent-storage
+      name: mongo-game-storage
       annotations:
-        volume.beta.kubernetes.io/storage-class: "fast3"
+        volume.beta.kubernetes.io/storage-class: "fast4"
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
@@ -172,15 +84,14 @@ spec:
           storage: 2Gi
           cpu: 200m
           memory: 250Mi
-      selector:
-        matchLabels:
-          type: fast3-user
+
 
   - metadata:
-      name: claim-backend-user
+      name: claim-backend-game
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "fast2"
+      storageClassName: "fast1"
       resources:
         requests:
           storage: 500Mi
+
