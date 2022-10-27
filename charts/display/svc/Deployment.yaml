@@ -45,7 +45,7 @@ spec:
         - containerPort: 8080
         volumeMounts:
         - name: claim-frontend
-          mountPath: "/app/*"
+          mountPath: "{{ .Values.APP_LOCATION }}"
         resources:
           requests: 
             memory: {{ .Values.K8S_REQ_MEM }}
