@@ -98,5 +98,5 @@ spec:
       storageClassName: "fast1"
       resources:
         requests:
-          storage: "{{ .Values.user.k8s_req_mem }}"
+          storage: "{{ .Values.game.k8s_req_mem }}"
 
