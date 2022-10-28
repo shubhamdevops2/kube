@@ -42,7 +42,7 @@ spec:
         image: "{{ .Values.DOCKER_APP_IMAGE }}"
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - containerPort: {{ .Values.CONTAINER_PORT }}
         volumeMounts:
         - name: claim-frontend
           mountPath: "{{ .Values.APP_LOCATION }}"
