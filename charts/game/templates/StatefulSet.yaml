@@ -57,7 +57,7 @@ spec:
         - name: "{{ .Values.game.name }}"
           image: "{{ .Values.game.docker_image }}"
           ports:
-            - containerPort: "{{ .Values.game.port }}"
+            - containerPort: {{ .Values.game.port }}
           volumeMounts:
             - name: claim-backend-game
               mountPath: "{{ .Values.game.location }}"
