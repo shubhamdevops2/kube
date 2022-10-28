@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ .Chart.Name }}-kd"
+  name: "{{ .Chart.Name }}-dm"
   namespace: "{{ .Values.NAMESPACE }}"
 spec:
   selector:
@@ -38,7 +38,7 @@ spec:
         persistentVolumeClaim:
           claimName: frontendpvc
       containers:
-      - name: "{{ .Chart.Name }}-kc"
+      - name: "{{ .Chart.Name }}-cn"
         image: "{{ .Values.DOCKER_APP_IMAGE }}"
         imagePullPolicy: Always
         ports:

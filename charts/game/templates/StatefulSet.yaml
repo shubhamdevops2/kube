@@ -1,10 +1,15 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: "{{ .Chart.Name }}-kd"
+  name: "{{ .Chart.Name }}-ss"
 spec:
-  serviceName: "game-service"
-  replicas: 2
+  serviceName: "{{ .Chart.Name }}-sv"
+  replicas: {{ .Values.K8S_REPLICAS }}
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.K8S_MAX_UNAVAIL }}
+      maxSurge: {{ .Values.K8S_MAX_SURGE }}
   selector:
     matchLabels:
       app: back-end-game
@@ -16,7 +21,7 @@ spec:
       tolerations:
       - key: "app"
         operator: "Equal"
-        value: "red"
+        value: "{{ .Values.TOLERATIONS }}"
         effect: "NoSchedule"
       affinity:
         nodeAffinity:
@@ -26,46 +31,46 @@ spec:
               - key: name
                 operator: In
                 values:
-                - worker2
+                - "{{ .Values.NODENAME }}"
       terminationGracePeriodSeconds: 10
       containers:
-        - name: mongo
-          image: mongo
+        - name: "{{ .Values.mongo.name }}"
+          image: "{{ .Values.mongo.docker_image }}"
           ports:
-            - containerPort: 27017
+            - containerPort: {{ .Values.mongo.port }}
           volumeMounts:
             - name: mongo-game-storage
-              mountPath: /data/*
+              mountPath: "{{ .Values.mongo.location }}"
           env:
             - name: MONGO_INITDB_ROOT_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: mysecret
+                  name: "{{ .Values.SECRET }}"
                   key: username
 
             - name: MONGO_INITDB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysecret
+                  name: "{{ .Values.SECRET }}"
                   key: password
 
-        - name: game
-          image: public.ecr.aws/y3z0f7y7/game
+        - name: "{{ .Values.game.name }}"
+          image: "{{ .Values.game.docker_image }}"
           ports:
-            - containerPort: 8082
+            - containerPort: "{{ .Values.game.port }}"
           volumeMounts:
             - name: claim-backend-game
-              mountPath: /app/*
+              mountPath: "{{ .Values.game.location }}"
           env:
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: mysecret
+                  name: "{{ .Values.SECRET }}"
                   key: username
             - name: DB_PW
               valueFrom:
                 secretKeyRef:
-                  name: mysecret
+                  name: "{{ .Values.SECRET }}"
                   key: password
 
   volumeClaimTemplates:
@@ -77,13 +82,13 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 1Gi
-          cpu: 100m
-          memory: 150Mi
+          storage: "{{ .Values.mongo.k8s_req.storage }}"
+          cpu: "{{ .Values.mongo.k8s_req.cpu }}"
+          memory: "{{ .Values.mongo.k8s_req.memory }}"
         limits:
-          storage: 2Gi
-          cpu: 200m
-          memory: 250Mi
+          storage: "{{ .Values.mongo.k8s_limit.storage }}"
+          cpu: "{{ .Values.mongo.k8s_limit.cpu }}"
+          memory: "{{ .Values.mongo.k8s_limit.memory }}"
 
 
   - metadata:
@@ -93,5 +98,5 @@ spec:
       storageClassName: "fast1"
       resources:
         requests:
-          storage: 500Mi
+          storage: "{{ .Values.user.k8s_req_mem }}"
 

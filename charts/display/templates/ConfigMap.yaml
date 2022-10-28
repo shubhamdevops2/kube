@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{ .Chart.Name }}-kcm"
+  name: "{{ .Chart.Name }}-cm"
   labels:
     environment: "{{ .Values.NAMESPACE }}"
     app: frontend
