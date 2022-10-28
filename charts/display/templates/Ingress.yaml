@@ -14,28 +14,28 @@ spec:
       paths:
       - backend:
           service:
-            name: user-svc-sv
+            name: user-service
             port:
               number: 8081
         path: /register
         pathType: Prefix
       - backend:
           service:
-            name: user-svc-sv
+            name: user-service
             port:
               number: 8081
         path: /authenticate
         pathType: Prefix
       - backend:
           service:
-            name: game-svc-sv
+            name: game-service
             port:
               number: 8082
         path: /score
         pathType: Prefix
       - backend:
           service:
-            name: game-svc-sv
+            name: game-service
             port:
               number: 8082
         path: /score/?(.*)
