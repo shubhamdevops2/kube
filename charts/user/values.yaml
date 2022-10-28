@@ -8,6 +8,7 @@ AUTOSCALE_CPU_PERCENTAGE: '50'
 SECRET: 'mysecret'
 TOLERATIONS: 'red'
 NODENAME: 'worker2' 
+SERVICENAME: 'user-service'
 
 mongo:
   docker_image: 'mongo'

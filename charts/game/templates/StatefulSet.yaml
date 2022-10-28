@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: "{{ .Chart.Name }}-ss"
 spec:
-  serviceName: "{{ .Chart.Name }}-sv"
+  serviceName: "{{ .Values.SERVICENAME }}"
   replicas: {{ .Values.K8S_REPLICAS }}
   strategy: 
     type: RollingUpdate
