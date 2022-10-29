@@ -1,4 +1,0 @@
-apiVersion: v2
-name: user-svc
-description: A chart for user-svc
-version: 0.1.0
